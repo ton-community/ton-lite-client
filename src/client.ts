@@ -16,18 +16,17 @@ import {
     Account,
     Contract,
     openContract,
-    AccountState,
     loadShardStateUnsplit,
     StateInit
 } from "@ton/core";
 import { LiteEngine } from "./engines/engine";
 import { parseShards } from "./parser/parseShards";
-import { Functions, liteServer_blockHeader, liteServer_transactionId, liteServer_transactionId3, tonNode_blockIdExt } from "./schema";
+import { Functions, liteServer_blockHeader, liteServer_transactionId, liteServer_transactionId3 } from "./schema";
 import DataLoader from 'dataloader';
 import { crc16 } from "./utils/crc16";
 import { createLiteClientProvider } from "./liteClientProvider";
 import { LRUMap } from 'lru_map';
-import { AccountsDataLoaderKey, AllShardsResponse, BlockID, BlockLookupIDRequest, BlockLookupRequest, BlockLookupUtimeRequest, CacheMap, ClientAccountState, QueryArgs } from "./types";
+import { AccountsDataLoaderKey, AllShardsResponse, BlockID, BlockLookupRequest, CacheMap, ClientAccountState, QueryArgs } from "./types";
 import { findIntersection, findOnlyOnFirst } from "./utils/arrays";
 
 const ZERO = 0n;
@@ -482,6 +481,35 @@ export class LiteClient {
 
         return await this.engine.query(Functions.liteServer_listBlockTransactions, {
             kind: 'liteServer.listBlockTransactions',
+            id: {
+                kind: 'tonNode.blockIdExt',
+                seqno: block.seqno,
+                shard: block.shard,
+                workchain: block.workchain,
+                rootHash: block.rootHash,
+                fileHash: block.fileHash
+            },
+            mode,
+            count,
+            reverseOrder: null,
+            after,
+            wantProof: null
+        }, queryArgs);
+    }
+
+    listBlockTransactionsExt = async (block: BlockID, args?: {
+        mode: number,
+        count: number,
+        after?: liteServer_transactionId3 | null | undefined,
+        wantProof?: boolean
+    }, queryArgs?: QueryArgs) => {
+
+        let mode = args?.mode || 1 + 2 + 4;
+        let count = args?.count || 100;
+        let after: liteServer_transactionId3 | null = args && args.after ? args.after : null;
+
+        return await this.engine.query(Functions.liteServer_listBlockTransactionsExt, {
+            kind: 'liteServer.listBlockTransactionsExt',
             id: {
                 kind: 'tonNode.blockIdExt',
                 seqno: block.seqno,

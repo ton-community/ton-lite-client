@@ -197,6 +197,15 @@ export interface liteServer_blockTransactions {
     readonly proof: TLBytes;
 }
 
+export interface liteServer_blockTransactionsExt {
+    readonly kind: 'liteServer.blockTransactionsExt';
+    readonly id: tonNode_blockIdExt;
+    readonly reqCount: TLFlag;
+    readonly incomplete: TLBool;
+    readonly transactions: TLBytes;
+    readonly proof: TLBytes;
+}
+
 export interface liteServer_signature {
     readonly kind: 'liteServer.signature';
     readonly nodeIdShort: TLInt256;
@@ -330,6 +339,8 @@ export type liteServer_TransactionId3 = liteServer_transactionId3;
 
 export type liteServer_BlockTransactions = liteServer_blockTransactions;
 
+export type liteServer_BlockTransactionsExt = liteServer_blockTransactionsExt;
+
 export type liteServer_Signature = liteServer_signature;
 
 export type liteServer_SignatureSet = liteServer_signatureSet;
@@ -451,6 +462,16 @@ export interface liteServer_lookupBlock {
 
 export interface liteServer_listBlockTransactions {
     readonly kind: 'liteServer.listBlockTransactions';
+    readonly id: tonNode_blockIdExt;
+    readonly mode: TLFlag;
+    readonly count: TLFlag;
+    readonly after: liteServer_transactionId3 | null;
+    readonly reverseOrder: TLBool | null;
+    readonly wantProof: TLBool | null;
+}
+
+export interface liteServer_listBlockTransactionsExt {
+    readonly kind: 'liteServer.listBlockTransactionsExt';
     readonly id: tonNode_blockIdExt;
     readonly mode: TLFlag;
     readonly count: TLFlag;
@@ -599,6 +620,11 @@ export const Functions = {
         encodeRequest: (src: liteServer_listBlockTransactions, encoder: TLWriteBuffer) => { encoder.writeInt32(-1375942694); Codecs.liteServer_listBlockTransactions.encode(src, encoder); },
         decodeResponse: (decoder: TLReadBuffer) => Codecs.liteServer_BlockTransactions.decode(decoder)
     } as TLFunction<liteServer_listBlockTransactions, liteServer_BlockTransactions>,
+
+    liteServer_listBlockTransactionsExt: {
+        encodeRequest: (src: liteServer_listBlockTransactionsExt, encoder: TLWriteBuffer) => { encoder.writeInt32(7986524); Codecs.liteServer_listBlockTransactionsExt.encode(src, encoder); },
+        decodeResponse: (decoder: TLReadBuffer) => Codecs.liteServer_BlockTransactionsExt.decode(decoder)
+    } as TLFunction<liteServer_listBlockTransactionsExt, liteServer_BlockTransactionsExt>,
 
     liteServer_getBlockProof: {
         encodeRequest: (src: liteServer_getBlockProof, encoder: TLWriteBuffer) => { encoder.writeInt32(-1964336060); Codecs.liteServer_getBlockProof.encode(src, encoder); },
@@ -1021,6 +1047,24 @@ export const Codecs = {
         },
     } as TLCodec<liteServer_blockTransactions>,
 
+    liteServer_blockTransactionsExt: {
+        encode: (src: liteServer_blockTransactionsExt, encoder: TLWriteBuffer) => {
+            Codecs.tonNode_blockIdExt.encode(src.id, encoder);
+            encoder.writeUInt32(src.reqCount);
+            encoder.writeBool(src.incomplete);
+            encoder.writeBuffer(src.transactions);
+            encoder.writeBuffer(src.proof);
+        },
+        decode: (decoder: TLReadBuffer): liteServer_blockTransactionsExt => {
+            let id = Codecs.tonNode_blockIdExt.decode(decoder);
+            let reqCount = decoder.readUInt32();
+            let incomplete = decoder.readBool();
+            let transactions = decoder.readBuffer();
+            let proof = decoder.readBuffer();
+            return { kind: 'liteServer.blockTransactionsExt', id, reqCount, incomplete, transactions, proof };
+        },
+    } as TLCodec<liteServer_blockTransactionsExt>,
+
     liteServer_signature: {
         encode: (src: liteServer_signature, encoder: TLWriteBuffer) => {
             encoder.writeInt256(src.nodeIdShort);
@@ -1392,6 +1436,26 @@ export const Codecs = {
             return { kind: 'liteServer.listBlockTransactions', id, mode, count, after, reverseOrder, wantProof };
         },
     } as TLCodec<liteServer_listBlockTransactions>,
+
+    liteServer_listBlockTransactionsExt: {
+        encode: (src: liteServer_listBlockTransactionsExt, encoder: TLWriteBuffer) => {
+            Codecs.tonNode_blockIdExt.encode(src.id, encoder);
+            encoder.writeUInt32(src.mode);
+            encoder.writeUInt32(src.count);
+            (src.mode & (1 << 7)) && !!src.after && Codecs.liteServer_transactionId3.encode(src.after, encoder);
+            (src.mode & (1 << 6)) && !!src.reverseOrder && encoder.writeBool(src.reverseOrder);
+            (src.mode & (1 << 5)) && !!src.wantProof && encoder.writeBool(src.wantProof);
+        },
+        decode: (decoder: TLReadBuffer): liteServer_listBlockTransactionsExt => {
+            let id = Codecs.tonNode_blockIdExt.decode(decoder);
+            let mode = decoder.readUInt32();
+            let count = decoder.readUInt32();
+            let after = (mode & (1 << 7)) ? Codecs.liteServer_transactionId3.decode(decoder) : null;
+            let reverseOrder = (mode & (1 << 6)) ? decoder.readBool() : null;
+            let wantProof = (mode & (1 << 5)) ? decoder.readBool() : null;
+            return { kind: 'liteServer.listBlockTransactionsExt', id, mode, count, after, reverseOrder, wantProof };
+        },
+    } as TLCodec<liteServer_listBlockTransactionsExt>,
 
     liteServer_getBlockProof: {
         encode: (src: liteServer_getBlockProof, encoder: TLWriteBuffer) => {
@@ -1964,6 +2028,25 @@ export const Codecs = {
             throw Error('Unknown type: ' + kind);
         },
     } as TLCodec<liteServer_BlockTransactions>,
+
+    liteServer_BlockTransactionsExt: {
+        encode: (src: liteServer_BlockTransactionsExt, encoder: TLWriteBuffer) => {
+            const kind = src.kind;
+            if (kind === 'liteServer.blockTransactionsExt') {
+                encoder.writeInt32(-74449692);
+                Codecs.liteServer_blockTransactionsExt.encode(src, encoder);
+                return;
+            }
+            throw Error('Unknown type: ' + kind);
+        },
+        decode: (decoder: TLReadBuffer): liteServer_BlockTransactionsExt => {
+            const kind = decoder.readInt32();
+            if (kind === -74449692) {
+                return Codecs.liteServer_blockTransactionsExt.decode(decoder);
+            }
+            throw Error('Unknown type: ' + kind);
+        },
+    } as TLCodec<liteServer_BlockTransactionsExt>,
 
     liteServer_Signature: {
         encode: (src: liteServer_Signature, encoder: TLWriteBuffer) => {
